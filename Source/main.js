@@ -23,4 +23,4 @@ var server=http.createServer(function (req,res){
 });
 
 server.listen(5055);
-console.log("Server Run Success");
+console.log("Server Run Success request and responce");
