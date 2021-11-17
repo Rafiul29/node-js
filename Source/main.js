@@ -1,26 +1,19 @@
-var http=require('http');
+var http = require('http');
+var URL = require('url');
+var server=http.createServer(function(req,res){
+    var myURL="http://rabbil.com/blog.html?year=2020&month=junly";
 
-var server=http.createServer(function (req,res){
-    
-    if(req.url=="/"){
-        res.writeHead(200,{'Content-Type':'text/html'})
-        res.write('<h1> This is a home page</h1>')
-        res.end();
-    }
-    else if(req.url=="/about"){
-        res.writeHead(200,{'Content-Type':'text/html'})
-        res.write('<h1> This is an about page</h1>')
-        res.end();
-    }
-    else if(req.url=="/contact"){
-        res.writeHead(200,{'Content-Type':'text/html'})
-        res.write('<h1> This is an contact page</h1>')
-        res.end();
-    }
-   
-
-
+    var myURLObj=URL.parse(myURL,ture);
+    var myHostName=myURLObj.host;
+    var myPathName=myURLObj.pathname;
+    res.writeHead(200,{'Content-Type':'text/html'})
+    res.write(myPathName);
+    res.end();
 });
+server.listen(5055);
+console.log("Server running good");
 
 server.listen(5055);
 console.log("Server Run Success request and responce");
+
+
