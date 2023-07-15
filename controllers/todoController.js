@@ -1,11 +1,38 @@
-const { error } = require("console");
 const Todo = require("../models/todoSchema");
 
 // get all the  todos
-const getAllTodos = async (req, res) => {};
+const getAllTodos = async (req, res) => {
+  try{
+    const alldata=  await Todo.find({status:"active"})
+    .select({ _id:0, __v:0, date:0 })
+    .limit(5)
+    .sort({ createdAt: -1 });
+    res.status(200).json({
+      result:alldata,
+      message: "Todos were inserted successfully",
+    });
+  }catch(error){
+    res.status(500).json({
+      error: "There was a server side error",
+    });
+  }
+};
 
 // get a single todo
-const getSingleTodo = async (req, res) => {};
+const getSingleTodo = async (req, res) => { 
+  try{
+    const {id}=req.params
+    const singledata=  await Todo.find({_id:id});
+    res.status(200).json({
+      result:singledata,
+      message: "Todos were inserted successfully",
+    });
+  }catch(error){
+    res.status(500).json({
+      error: "There was a server side error",
+    });
+  }
+};
 
 //add single todo
 const addSingeTodo = async (req, res) => {
@@ -27,9 +54,7 @@ const addSingeTodo = async (req, res) => {
 //add multiple todos
 const addMultipleTodo = async (req, res) => {
   try{
-    // findByIdUpdate()
-    // insertMany()
-  const data=  await Todo.findByIdUpdate(req.body)
+  const data=  await Todo.insertMany(req.body)
     res.status(201).json({
       message: "Todo was inserted successfully",
     });
@@ -44,10 +69,11 @@ const addMultipleTodo = async (req, res) => {
 //put todo
 const updateTodo = async (req, res) => {
   try{
+       // findByIdUpdate()  response dei 
     await Todo.updateOne({_id:req.params.id},
      {$set:{
       status:"active"
-     }} )
+     }},{new:true})
      res.status(200).json({
       message: "Todo was update successfully",
     });
@@ -58,7 +84,20 @@ const updateTodo = async (req, res) => {
   }
 };
 
-const deleteTodo = async (req, res) => {};
+const deleteTodo = async (req, res) => {
+  try{
+    //deleteOne
+ const result= await Todo.findByIdAndDelete({_id:req.params.id})
+    res.status(200).json({
+      result,
+      message: "Todos were deleted successfully",
+    });
+  }catch(error){
+    res.status(500).json({
+      error: "There was a server side error",
+    });
+  }
+};
 
 module.exports = {
   getAllTodos,
