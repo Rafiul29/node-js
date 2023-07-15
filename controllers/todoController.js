@@ -1,5 +1,22 @@
 const Todo = require("../models/todoSchema");
 
+
+const queryLanguge=async(req,res)=>{
+  const data =await Todo.find().byLanguage('islam1');
+  res.status(200).json({
+    data
+  })
+}
+
+// find rafiul
+const findByJs=async(req,res)=>{
+  const data =await Todo.findByJs()
+  console.log(data)
+  res.status(200).json({
+    data
+  })
+}
+
 // get all the  todos
 const getAllTodos = async (req, res) => {
   try{
@@ -34,12 +51,40 @@ const getSingleTodo = async (req, res) => {
   }
 };
 
+//active todo  get data
+const activeTodo = async (req, res) => { 
+  
+  try{
+    const todo=new Todo();
+    const data=await todo.findActive()
+    res.status(200).json({
+      data,
+      message: "Todos were active todo successfully",
+    });
+  }catch(error){
+    res.status(500).json({
+      error: "There was a server  a side error",
+    });
+  }
+};
+
+// const activeTodoCallback =  (req, res) => { 
+//   const todo=new Todo();
+//   todo.findActiveCallback((err,data)=>{
+//     res.status(200).json({
+//       data,
+//     })
+//   })
+// };
+
+
+
 //add single todo
 const addSingeTodo = async (req, res) => {
   //const newTodo = new Todo(req.body);
   // const todo=await Todo.create(newTodo)
   try{
-    // await newTodo.save();
+    // await newTodo.save(); 
     await Todo.create(req.body)
     res.status(200).json({
       message: "Todos were inserted successfully",
@@ -106,4 +151,7 @@ module.exports = {
   addMultipleTodo,
   updateTodo,
   deleteTodo,
+  activeTodo,
+  findByJs,
+  queryLanguge
 };
