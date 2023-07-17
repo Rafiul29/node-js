@@ -1,11 +1,65 @@
+// external import
 const express=require('express');
+const dotenv=require('dotenv')
+const mongoose=require('mongoose')
+const path=require("path")
+const cookieParser=require("cookie-parser")
+
+
+// internal import
+const {notFoundaHandler,errorHandler}=require("./middlewares/common/errorHandlers")
+const loginRouter=require("./router/loginRouter")
+
 
 const app=express();
 
+dotenv.config();
 
-app.get("/",(req,res)=>{
-  res.send("hello word ")
+
+// data base connection
+mongoose.connect(process.env.MONGO_URI,{
+  useNewUrlParser:true,
 })
-app.listen(3000,()=>{
-  console.log('listening on port 3000')
+.then(()=>{
+  console.log("Date base connection succsessfull")
 })
+.catch(err=>console.log(err))
+
+
+//request parsers
+app.use(express.json());
+app.use(express.urlencoded({extended:true}))
+
+
+// set view engine
+app.set("view engine","ejs")
+
+// set static folder
+app.use(express.static(path.join(__dirname,"public")))
+
+
+// parse cookies
+app.use(cookieParser(process.env.COOKIE_SECRET))
+
+
+
+// routing setup
+app.use('/',loginRouter)
+// app.use('/',usersRouter)
+// app.use('/',inboxRouter)
+
+
+// 404 not found handlers
+app.use(notFoundaHandler)
+
+//error handling
+app.use(errorHandler)
+
+
+// listen server
+app.listen(process.env.PORT,()=>{
+  console.log(`listening on port ${process.env.PORT}`)
+})
+
+
+
