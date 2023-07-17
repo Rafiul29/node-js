@@ -1,34 +1,34 @@
 const Todo = require("../models/todoSchema");
-
-
-const queryLanguge=async(req,res)=>{
-  const data =await Todo.find().byLanguage('islam1');
+const User = require("../models/userSchema");
+const queryLanguge = async (req, res) => {
+  const data = await Todo.find().byLanguage("islam1");
   res.status(200).json({
-    data
-  })
-}
+    data,
+  });
+};
 
 // find rafiul
-const findByJs=async(req,res)=>{
-  const data =await Todo.findByJs()
-  console.log(data)
+const findByJs = async (req, res) => {
+  const data = await Todo.findByJs();
+  console.log(data);
   res.status(200).json({
-    data
-  })
-}
+    data,
+  });
+};
 
 // get all the  todos
 const getAllTodos = async (req, res) => {
-  try{
-    const alldata=  await Todo.find({status:"active"})
-    .select({ _id:0, __v:0, date:0 })
-    .limit(5)
-    .sort({ createdAt: -1 });
+  try {
+    const alldata = await Todo.find({})
+      .populate("user", "name username -_id")
+      .select({ _id: 0, __v: 0, date: 0 })
+      .limit(5)
+      .sort({ createdAt: -1 });
     res.status(200).json({
-      result:alldata,
+      result: alldata,
       message: "Todos were inserted successfully",
     });
-  }catch(error){
+  } catch (error) {
     res.status(500).json({
       error: "There was a server side error",
     });
@@ -36,15 +36,15 @@ const getAllTodos = async (req, res) => {
 };
 
 // get a single todo
-const getSingleTodo = async (req, res) => { 
-  try{
-    const {id}=req.params
-    const singledata=  await Todo.find({_id:id});
+const getSingleTodo = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const singledata = await Todo.find({ _id: id });
     res.status(200).json({
-      result:singledata,
+      result: singledata,
       message: "Todos were inserted successfully",
     });
-  }catch(error){
+  } catch (error) {
     res.status(500).json({
       error: "There was a server side error",
     });
@@ -52,23 +52,22 @@ const getSingleTodo = async (req, res) => {
 };
 
 //active todo  get data
-const activeTodo = async (req, res) => { 
-  
-  try{
-    const todo=new Todo();
-    const data=await todo.findActive()
+const activeTodo = async (req, res) => {
+  try {
+    const todo = new Todo();
+    const data = await todo.findActive();
     res.status(200).json({
       data,
       message: "Todos were active todo successfully",
     });
-  }catch(error){
+  } catch (error) {
     res.status(500).json({
       error: "There was a server  a side error",
     });
   }
 };
 
-// const activeTodoCallback =  (req, res) => { 
+// const activeTodoCallback =  (req, res) => {
 //   const todo=new Todo();
 //   todo.findActiveCallback((err,data)=>{
 //     res.status(200).json({
@@ -77,34 +76,54 @@ const activeTodo = async (req, res) => {
 //   })
 // };
 
-
-
 //add single todo
 const addSingeTodo = async (req, res) => {
-  //const newTodo = new Todo(req.body);
+  // const newTodo = new Todo(req.body});
+  // await newTodo.save();
   // const todo=await Todo.create(newTodo)
-  try{
-    // await newTodo.save(); 
-    await Todo.create(req.body)
+
+  const newTodo = new Todo({
+    ...req.body,
+    user: req.userId,
+  });
+  try {
+    // const user=req.userId;
+    // const todo=await Todo.create({
+    //   ...req.body,
+    //   user
+    // })
+    const todo = await newTodo.save();
+
+    await User.updateOne(
+      {
+        _id: req.userId,
+      },
+      {
+        $push: {
+          todos: todo._id,
+        },
+      }
+    );
+
     res.status(200).json({
       message: "Todos were inserted successfully",
     });
-  }catch(error){
+  } catch (error) {
     res.status(500).json({
-      error: "There was a server side error",
+      error: "There was a server side errors",
     });
   }
 };
 
 //add multiple todos
 const addMultipleTodo = async (req, res) => {
-  try{
-  const data=  await Todo.insertMany(req.body)
+  try {
+    const data = await Todo.insertMany(req.body);
     res.status(201).json({
       message: "Todo was inserted successfully",
     });
-    res.status(200).json(data)
-  }catch(error){
+    res.status(200).json(data);
+  } catch (error) {
     res.status(500).json({
       error: "There was a server side error",
     });
@@ -113,16 +132,21 @@ const addMultipleTodo = async (req, res) => {
 
 //put todo
 const updateTodo = async (req, res) => {
-  try{
-       // findByIdUpdate()  response dei 
-    await Todo.updateOne({_id:req.params.id},
-     {$set:{
-      status:"active"
-     }},{new:true})
-     res.status(200).json({
+  try {
+    // findByIdUpdate()  response dei
+    await Todo.updateOne(
+      { _id: req.params.id },
+      {
+        $set: {
+          status: "active",
+        },
+      },
+      { new: true }
+    );
+    res.status(200).json({
       message: "Todo was update successfully",
     });
-  }catch(error){
+  } catch (error) {
     res.status(500).json({
       error: "There was a server side error",
     });
@@ -130,14 +154,14 @@ const updateTodo = async (req, res) => {
 };
 
 const deleteTodo = async (req, res) => {
-  try{
+  try {
     //deleteOne
- const result= await Todo.findByIdAndDelete({_id:req.params.id})
+    const result = await Todo.findByIdAndDelete({ _id: req.params.id });
     res.status(200).json({
       result,
       message: "Todos were deleted successfully",
     });
-  }catch(error){
+  } catch (error) {
     res.status(500).json({
       error: "There was a server side error",
     });
@@ -153,5 +177,5 @@ module.exports = {
   deleteTodo,
   activeTodo,
   findByJs,
-  queryLanguge
+  queryLanguge,
 };

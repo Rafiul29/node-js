@@ -1,28 +1,31 @@
 const express=require('express');
 const {getAllTodos,getSingleTodo,addSingeTodo,addMultipleTodo,updateTodo,deleteTodo,activeTodo,findByJs,queryLanguge}=require('../controllers/todoController')
+const checkLogin=require('../middleware/checkLogin')
+
+
 
 const router=express.Router();
 
 
 //get active language
-router.get('/language',queryLanguge)
+// router.get('/language',queryLanguge)
 
-router.get('/js',findByJs)
+// router.get('/js',findByJs)
 // active todo callback
 // router.get("/active-callback",activeTodoCallback)
 
 //active todo
-router.get("/active-no",activeTodo)
+// router.get("/active-no",activeTodo)
 
 
 //get all the todos
-router.get('/',getAllTodos);
+router.get('/',checkLogin, getAllTodos);
 
 // // get a single todos
 router.get("/:id",getSingleTodo)
 
 //post  single todo
-router.post('/',addSingeTodo)
+router.post('/',checkLogin,addSingeTodo)
 
 //post multiple todos
 router.post('/all',addMultipleTodo);

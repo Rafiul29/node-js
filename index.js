@@ -1,6 +1,9 @@
+require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
-const todoRoute=require('./routes/todoRoute')
+const todoRoute = require("./routes/todoRoute");
+const userRoute = require("./routes/userRoute");
+
 // express application initialization"
 const app = express();
 
@@ -20,8 +23,18 @@ mongoose
     console.log(err);
   });
 
-  app.use('/todo',todoRoute);
+app.use("/todo", todoRoute);
 
+app.use("/user", userRoute);
+
+const errorHander = (err, req, res, next) => {
+  if (res.headersSent) {
+    return next(err);
+  }
+  res.status(500).json({ error: err });
+};
+
+app.use(errorHander);
 
 app.listen(3000, () => {
   console.log("listening on port 3000");
