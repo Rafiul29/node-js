@@ -1,17 +1,14 @@
-// internal imports
+// external imports
 const express=require("express")
 
-// external imports
+// internal imports
 const {getLogin}=require("../controller/loginController");
-const { model, models } = require("mongoose");
+const decorateHtmlResponse=require("../middlewares/common/deorateHtmlResponse")
 
 // router
 const router=express.Router();
 
-
 // login router
-router.get("/",getLogin)
-
-
+router.get("/",decorateHtmlResponse("Login"),getLogin)
 
 module.exports=router;

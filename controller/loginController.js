@@ -1,14 +1,9 @@
 
 
 const getLogin=(req,res)=>{
-
-  res.render("index",{
-    title:"Login Chat Application"
-  })
+  res.render("index")
 }
 
-
-
 module.exports={
-  getLogin
+  getLogin,
 }
