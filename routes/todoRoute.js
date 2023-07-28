@@ -19,7 +19,7 @@ const router=express.Router();
 
 
 //get all the todos
-router.get('/',checkLogin, getAllTodos);
+router.get('/',checkLogin,getAllTodos);
 
 // // get a single todos
 router.get("/:id",getSingleTodo)
