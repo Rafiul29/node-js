@@ -1,13 +1,28 @@
 
-function avatarUploads(req,res,next){
-  const upload=uploader(
+const uploader=require("../../utilitis/singleUpload")
+
+function avatarUploads(req, res, next) {
+  const upload = uploader(
     "avatars",
-    ["image/jpeg","image/jpg","image/png"],
+    ["image/jpeg", "image/jpg", "image/png"],
     1000000,
-    "only .jpg , .jpeg or .png format allowed!"
-  )
-  //call the middleware function
-  
+    "Only .jpg, jpeg or .png format allowed!"
+  );
+
+  // call the middleware function
+  upload.any()(req, res, (err) => {
+    if (err) {
+      res.status(500).json({
+        errors: {
+          avatar: {
+            msg: err.message,
+          },
+        },
+      });
+    } else {
+      next();
+    }
+  });
 }
 
-module.exports=avatarUploads; 
+module.exports = avatarUploads;

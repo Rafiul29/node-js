@@ -36,7 +36,7 @@ function uploader(
       fileSize:max_file_size,
     },
     fileFilter:(req,file,cb)=>{
-      if(allowed_file_types.incldes(file.mimetype)){
+      if(allowed_file_types.includes(file.mimetype)){
         cb(null,true);
       }else{
         cb(createError(error_msg))
