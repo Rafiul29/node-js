@@ -56,5 +56,5 @@ app.use(errorHandler);
 
 // listen server
 app.listen(process.env.PORT, () => {
-  console.log(`listening on port ${process.env.PORT}`);
+  console.log(`listening on server url http://localhost:${process.env.PORT}/`)
 });

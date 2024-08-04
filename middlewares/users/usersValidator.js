@@ -11,7 +11,7 @@ const addUserValidators = [
     .isLength({ min: 3 })
     .withMessage("Name is required")
     .isAlpha("en-US", { ignore: " " })
-    .withMessage("Name must not contain anything order than alphabeet")
+    .withMessage("Name must not contain anything order than alphabet")
     .trim(),
   check("email")
     .isEmail()
