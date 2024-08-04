@@ -4,7 +4,7 @@ const dotenv = require("dotenv");
 const mongoose = require("mongoose");
 const path = require("path");
 const cookieParser = require("cookie-parser");
-
+const  morgan = require('morgan')
 // internal import
 const {
   notFoundaHandler,
@@ -33,6 +33,7 @@ mongoose
 //request parsers
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(morgan('dev'))
 
 // set view engine
 app.set("view engine", "ejs");
