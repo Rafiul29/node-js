@@ -6,8 +6,6 @@ const path = require("path");
 // internal import
 const User=require("../model/people")
 
-
-
 // get users page
 const getUsers=async(req,res,next)=>{
       try{
@@ -36,7 +34,6 @@ async function addUser(req, res, next) {
       password: hashedPassword,
     });
   }
-
   // save user or send error
   try {
     const result = await newUser.save();
