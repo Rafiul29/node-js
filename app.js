@@ -1,39 +1,46 @@
-// external import
+// external imports
 const express = require("express");
+const http = require("http");
 const dotenv = require("dotenv");
 const mongoose = require("mongoose");
 const path = require("path");
 const cookieParser = require("cookie-parser");
-const  morgan = require('morgan')
-// internal import
-const {
-  notFoundaHandler,
-  errorHandler,
-} = require("./middlewares/common/errorHandlers");
-const loginRouter = require("./router/loginRouter");
-const inboxRouter = require("./router/inboxRouter");
-const usersRouter = require("./router/usersRouter");
+const moment = require("moment");
 
+// internal imports
+const loginRouter = require("./router/loginRouter");
+const usersRouter = require("./router/usersRouter");
+const inboxRouter = require("./router/inboxRouter");
+
+// internal imports
+const {
+  notFoundHandler,
+  errorHandler,
+} = require("./middlewares/common/errorHandler");
 
 const app = express();
-
+const server = http.createServer(app);
 dotenv.config();
 
-// data base connection
+// socket creation
+const io = require("socket.io")(server);
+global.io = io;
+
+// set comment as app locals
+app.locals.moment = moment;
+
+// database connection
 mongoose
-  .connect(process.env.MONGO_URI, {
+  .connect(process.env.MONGO_CONNECTION_STRING, {
     useNewUrlParser: true,
+    useUnifiedTopology: true,
   })
-  .then(() => {
-    console.log("Date base connection succsessfull");
-  })
+  .then(() => console.log("database connection successful!"))
   .catch((err) => console.log(err));
 
-  
-//request parsers
+// request parsers
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(morgan('dev'))
 
 // set view engine
 app.set("view engine", "ejs");
@@ -49,13 +56,12 @@ app.use("/", loginRouter);
 app.use("/users", usersRouter);
 app.use("/inbox", inboxRouter);
 
-// 404 not found handlers
-app.use(notFoundaHandler);
+// 404 not found handler
+app.use(notFoundHandler);
 
-//error handling
+// common error handler
 app.use(errorHandler);
 
-// listen server
-app.listen(process.env.PORT, () => {
-  console.log(`listening on server url http://localhost:${process.env.PORT}/`)
+server.listen(process.env.PORT, () => {
+  console.log(`app listening to port ${process.env.PORT}`);
 });

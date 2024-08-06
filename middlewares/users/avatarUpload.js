@@ -1,7 +1,6 @@
+const uploader = require("../../utilities/singleUploader");
 
-const uploader=require("../../utilitis/singleUpload")
-
-function avatarUploads(req, res, next) {
+function avatarUpload(req, res, next) {
   const upload = uploader(
     "avatars",
     ["image/jpeg", "image/jpg", "image/png"],
@@ -25,4 +24,4 @@ function avatarUploads(req, res, next) {
   });
 }
 
-module.exports = avatarUploads;
+module.exports = avatarUpload;

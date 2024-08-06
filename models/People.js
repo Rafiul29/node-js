@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const peopleSchema = new mongoose.Schema(
+const peopleSchema = mongoose.Schema(
   {
     name: {
       type: String,
@@ -12,7 +12,6 @@ const peopleSchema = new mongoose.Schema(
       required: true,
       trim: true,
       lowercase: true,
-      unique:true
     },
     mobile: {
       type: String,
@@ -27,12 +26,15 @@ const peopleSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["admin","user"],
+      enum: ["admin", "user"],
       default: "user",
     },
   },
-  { timestamp: true}
+  {
+    timestamps: true,
+  }
 );
 
 const People = mongoose.model("People", peopleSchema);
+
 module.exports = People;

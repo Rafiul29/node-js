@@ -1,68 +1,77 @@
-// external import
+// external imports
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const createError=require('http-errors')
+const createError = require("http-errors");
 
-const User = require("../model/people");
+// internal imports
+const User = require("../models/People");
 
-const getLogin = (req, res) => {
+// get login page
+function getLogin(req, res, next) {
   res.render("index");
-};
+}
 
+// do login
 async function login(req, res, next) {
   try {
-    // check a user who has this email/username
+    // find a user who has this email/username
     const user = await User.findOne({
       $or: [{ email: req.body.username }, { mobile: req.body.username }],
     });
+
     if (user && user._id) {
       const isValidPassword = await bcrypt.compare(
         req.body.password,
         user.password
       );
+
       if (isValidPassword) {
+        // prepare the user object to generate token
         const userObject = {
+          userid: user._id,
           username: user.name,
-          mobile: user.mobile,
           email: user.email,
-          role: "user",
+          avatar: user.avatar || null,
+          role: user.role || "user",
         };
+
         // generate token
         const token = jwt.sign(userObject, process.env.JWT_SECRET, {
           expiresIn: process.env.JWT_EXPIRY,
         });
-     
-        //set cookie
+
+        // set cookie
         res.cookie(process.env.COOKIE_NAME, token, {
           maxAge: process.env.JWT_EXPIRY,
-          httpOnly:true,
-          signed:true
+          httpOnly: true,
+          signed: true,
         });
-      
-        res.locals.loggedInUser=userObject
-        res.render('inbox')
 
+        // set logged in user local identifier
+        res.locals.loggedInUser = userObject;
+
+        res.redirect("inbox");
       } else {
-        throw createError("Login falied! Please try again")
+        throw createError("Login failed! Please try again.");
       }
     } else {
-      throw createError("User doesn't found")
+      throw createError("Login failed! Please try again.");
     }
   } catch (err) {
-    res.render('index',{
-      data:{
-        username:req.body.username
+    res.render("index", {
+      data: {
+        username: req.body.username,
       },
-      errors:{
-        common:{
-          msg:err.message
-        }
-      }
-    })
-   
+      errors: {
+        common: {
+          msg: err.message,
+        },
+      },
+    });
   }
 }
 
+// do logout
 function logout(req, res) {
   res.clearCookie(process.env.COOKIE_NAME);
   res.send("logged out");
@@ -71,5 +80,5 @@ function logout(req, res) {
 module.exports = {
   getLogin,
   login,
-  logout
+  logout,
 };
