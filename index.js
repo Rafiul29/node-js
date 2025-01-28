@@ -4,71 +4,94 @@ const path = require("path");
 const fs = require("fs");
 const multer = require("multer");
 const mongoose = require("mongoose");
-
+const { uploadFile } = require("./utils/uploadFile");
 const { Image, Product } = require("./models");
-
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use(
+  "/public/images",
+  express.static(path.join(__dirname, "public/images"))
+);
 
 app.get("/", (req, res) => {
   res.send("hello word ");
 });
 
 // configuration multer
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, "uploads");
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir);
-    }
-    cb(null, "uploads/");
-  },
-  filename: (req, file, cb) => {
-    const fileExt = path.extname(file.originalname);
-    const fileName =
-      file.originalname
-        .replace(fileExt, "")
-        .toLocaleLowerCase()
-        .split(" ")
-        .join("-") +
-      "-" +
-      Date.now();
+// const storage = multer.diskStorage({
+//   destination: (req, file, cb) => {
+//     const uploadDir = path.join(__dirname, "uploads");
+//     if (!fs.existsSync(uploadDir)) {
+//       fs.mkdirSync(uploadDir);
+//     }
+//     cb(null, "uploads/");
+//   },
+//   filename: (req, file, cb) => {
+//     const fileExt = path.extname(file.originalname);
+//     const fileName =
+//       file.originalname
+//         .replace(fileExt, "")
+//         .toLocaleLowerCase()
+//         .split(" ")
+//         .join("-") +
+//       "-" +
+//       Date.now();
 
-    cb(null, fileName + fileExt);
-  },
-});
+//     cb(null, fileName + fileExt);
+//   },
+// });
 
-const upload = multer({ storage });
+// const upload = multer({ storage });
 
 // utility function to delete a file
 const deleteFile = async (filePath) => {
-  fs.unlink(filePath, (err) => {
-    if (err) {
-      if (err.code === "ENOENT") {
-        console.warn(`File not found (already deleted): ${filePath}`);
+  try {
+    await fs.promises.access(filePath);
+
+    fs.unlink(filePath, (err) => {
+      if (err) {
+        if (err.code === "ENOENT") {
+          console.warn(`File not found (already deleted): ${filePath}`);
+        } else {
+          console.error(`Error deleting file: ${filePath}`, err);
+        }
       } else {
-        console.error(`Error deleting file: ${filePath}`, err);
+        console.log(`File deleted: ${filePath}`);
       }
+    });
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      console.warn(`ফাইল পাওয়া যায়নি (অলরেডি মুছে ফেলা হয়েছে): ${filePath}`);
     } else {
-      console.log(`File deleted: ${filePath}`);
+      console.error(`ফাইল পরীক্ষা করার সময় ত্রুটি: ${filePath}`, error);
     }
-  });
+  }
 };
 
+const uploadProductFile = uploadFile("products");
 // add products
 app.post(
   "/api/products/",
-  upload.fields([{ name: "thumbnail" }, { name: "images" }]),
+  uploadProductFile.fields([
+    { name: "thumbnail", maxCount: 1 },
+    { name: "images", maxCount: 5 },
+  ]),
   async (req, res) => {
     try {
+      
       const { name, description, price } = req.body;
-      const thumbnailPath = req.files.thumbnail[0].path;
+      console.log(req.files)
+      
+      let thumbnailPath = null;
 
+      if (req.files?.thumbnail?.[0]) {
+        thumbnailPath = req.files.thumbnail[0].path;
+      }
+      
       const product = new Product({
         name,
         description,
@@ -128,10 +151,9 @@ app.get("/api/products/:id", async (req, res) => {
 // update a single product
 app.put(
   "/api/products/:id",
-  upload.fields([{ name: "thumbnail" }, { name: "images" }]),
+  uploadProductFile.fields([{ name: "thumbnail" }, { name: "images" }]),
   async (req, res) => {
     try {
-      console.log("ewdwe");
       const { name, description, price } = req.body;
 
       const product = await Product.findById(req.params.id);
