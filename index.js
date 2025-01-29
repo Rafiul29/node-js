@@ -5,6 +5,8 @@ const fs = require("fs");
 const multer = require("multer");
 const mongoose = require("mongoose");
 const { uploadFile } = require("./utils/uploadFile");
+const { deleteFile } = require("./utils/deleteFile");
+
 const { Image, Product } = require("./models");
 
 const app = express();
@@ -48,29 +50,29 @@ app.get("/", (req, res) => {
 // const upload = multer({ storage });
 
 // utility function to delete a file
-const deleteFile = async (filePath) => {
-  try {
-    await fs.promises.access(filePath);
+// const deleteFile = async (filePath) => {
+//   try {
+//     await fs.promises.access(filePath);
 
-    fs.unlink(filePath, (err) => {
-      if (err) {
-        if (err.code === "ENOENT") {
-          console.warn(`File not found (already deleted): ${filePath}`);
-        } else {
-          console.error(`Error deleting file: ${filePath}`, err);
-        }
-      } else {
-        console.log(`File deleted: ${filePath}`);
-      }
-    });
-  } catch (error) {
-    if (error.code === "ENOENT") {
-      console.warn(`ফাইল পাওয়া যায়নি (অলরেডি মুছে ফেলা হয়েছে): ${filePath}`);
-    } else {
-      console.error(`ফাইল পরীক্ষা করার সময় ত্রুটি: ${filePath}`, error);
-    }
-  }
-};
+//     fs.unlink(filePath, (err) => {
+//       if (err) {
+//         if (err.code === "ENOENT") {
+//           console.warn(`File not found (already deleted): ${filePath}`);
+//         } else {
+//           console.error(`Error deleting file: ${filePath}`, err);
+//         }
+//       } else {
+//         console.log(`File deleted: ${filePath}`);
+//       }
+//     });
+//   } catch (error) {
+//     if (error.code === "ENOENT") {
+//       console.warn(`ফাইল পাওয়া যায়নি (অলরেডি মুছে ফেলা হয়েছে): ${filePath}`);
+//     } else {
+//       console.error(`ফাইল পরীক্ষা করার সময় ত্রুটি: ${filePath}`, error);
+//     }
+//   }
+// };
 
 const uploadProductFile = uploadFile("products");
 // add products
@@ -82,16 +84,15 @@ app.post(
   ]),
   async (req, res) => {
     try {
-      
       const { name, description, price } = req.body;
-      console.log(req.files)
-      
+      console.log(req.files);
+
       let thumbnailPath = null;
 
       if (req.files?.thumbnail?.[0]) {
         thumbnailPath = req.files.thumbnail[0].path;
       }
-      
+
       const product = new Product({
         name,
         description,
@@ -164,6 +165,7 @@ app.put(
 
       if (req.files.thumbnail[0]) {
         product.thumbnail = req.files.thumbnail[0].path;
+        // await deleteFile(product.thumbnail);
       } else {
         product.thumbnail = product.thumbnail;
       }
@@ -206,16 +208,14 @@ app.delete("/api/products/:id", async (req, res) => {
     }
 
     if (product.thumbnail) {
-      const thumbnailPath = path.join(__dirname, product.thumbnail);
-      await deleteFile(thumbnailPath);
+      await deleteFile(product.thumbnail);
     }
 
     const images = await Image.find({ product: product._id });
 
     await Promise.all(
       images.map(async (image) => {
-        const imagePath = path.join(__dirname, image.url);
-        await deleteFile(imagePath);
+        await deleteFile(image.url);
       })
     );
 
@@ -229,13 +229,32 @@ app.delete("/api/products/:id", async (req, res) => {
   }
 });
 
+// delete Image
+app.delete("/api/images/:id", async (req, res) => {
+  try {
+
+    const image = await Image.findById(req.params.id); 
+    console.log(req.params.id);
+
+    if (!image) {
+      return res.status(404).json({ message: "Image not found" });
+    }
+
+    // Optionally, delete the image file from the server
+    await deleteFile(image.url);
+
+    // Delete the image from the database
+    await image.deleteOne();
+    return res.status(200).json("Image delete sucessfull");
+  } catch (error) {
+    console.log(error.message);
+  }
+});
+
 const PORT = 5000;
 
 mongoose
-  .connect("mongodb://127.0.0.1:27017/test_sb", {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+  .connect("mongodb://127.0.0.1:27017/test_sb")
   .then(() =>
     app.listen(PORT, () =>
       console.log(`Server running on http://localhost:${PORT}`)
