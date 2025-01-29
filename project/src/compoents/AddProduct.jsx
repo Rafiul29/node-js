@@ -16,17 +16,20 @@ const AddProduct = ({ onClose, onSubmit, productToEdit }) => {
 
   const handleFileChange = (e) => {
     if (e.target.name === "thumbnail") {
+
       const file = e.target.files[0];
       setProduct({ ...product, thumbnail: file });
-    } else if (e.target.name === "images") {
-      const files = Array.from(e.target.files);
 
+    } else if (e.target.name === "images") {
+
+      const files = Array.from(e.target.files);
       setProduct({ ...product, images: files });
     }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
     const formData = new FormData();
     formData.append("name", product.name);
     formData.append("description", product.description);
@@ -54,7 +57,7 @@ const AddProduct = ({ onClose, onSubmit, productToEdit }) => {
     }
   };
 
-  console.log(product);
+
   return (
     <div className="bg-rose-100">
       <div className="fixed inset-0 z-100 flex items-center justify-center opacity-100 bg-[#fbfaf99c]">

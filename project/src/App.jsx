@@ -43,8 +43,15 @@ function App() {
       body: formData, // FormData object is sent directly in the body
     });
     const data = await response.json();
+    console.log(data)
     if (response.ok) {
-      setProducts([data, ...products]);
+      if (productId) {
+        setProducts(
+          products.map((product) => (product._id == productId ? data : product))
+        );
+      } else {
+        setProducts([data, ...products]);
+      }
       setShow(false);
     }
   };
@@ -92,9 +99,7 @@ function App() {
           onShow={handleShowModal}
         />
       </div>
-      <div>
-      
-      </div>
+      <div></div>
     </>
   );
 }

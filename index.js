@@ -73,6 +73,23 @@ app.get("/", (req, res) => {
 //     }
 //   }
 // };
+const multerErrorHandler = (err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    switch (err.code) {
+      case "LIMIT_FILE_SIZE":
+        return res
+          .status(400)
+          .json({ error: "File size too large. Maximum is 5MB." });
+      case "LIMIT_UNEXPECTED_FILE":
+        return res
+          .status(400)
+          .json({ error: "Unexpected file field or too many files." });
+      default:
+        return res.status(400).json({ error: `Multer error: ${err.message}` });
+    }
+  }
+  next(err); // Pass to next middleware for non-Multer errors
+};
 
 const uploadProductFile = uploadFile("products");
 // add products
@@ -82,10 +99,9 @@ app.post(
     { name: "thumbnail", maxCount: 1 },
     { name: "images", maxCount: 5 },
   ]),
-  async (req, res) => {
+  async (req, res, next) => {
     try {
       const { name, description, price } = req.body;
-      console.log(req.files);
 
       let thumbnailPath = null;
 
@@ -113,7 +129,7 @@ app.post(
       await product.save();
       res.status(201).json(product);
     } catch (error) {
-      res.status(500).json({ error: "Error creating product" });
+      next(error);
     }
   }
 );
@@ -163,9 +179,10 @@ app.put(
         res.status(404).json({ error: "Product not found" });
       }
 
-      if (req.files.thumbnail[0]) {
+      // handle to thubnail
+      if (req?.files?.thumbnail && req.files.thumbnail.length > 0) {
+        await deleteFile(product.thumbnail);
         product.thumbnail = req.files.thumbnail[0].path;
-        // await deleteFile(product.thumbnail);
       } else {
         product.thumbnail = product.thumbnail;
       }
@@ -174,9 +191,20 @@ app.put(
       product.description = description || product.description;
       product.price = price || product.price;
 
-      if (req.files.images) {
-        // Remove old image
-        await Image.deleteMany({ product: product._id });
+      // handle images
+      if (req?.files?.images && req.files.images.length > 0) {
+        // // Remove old image from db
+
+        //   product.images.map(async (img) => {
+        //     const id = img.toString();
+        //     const image = await Image.findById(id);
+        //       if(image){
+        //         await deleteFile(image?.url);
+        //         image?.deleteOne();
+        //       }
+        //   })
+
+        // await Image.deleteMany({ product: product._id });
 
         const imagePaths = req.files.images.map((file) => ({
           url: file.path,
@@ -185,7 +213,9 @@ app.put(
 
         const images = await Image.insertMany(imagePaths);
 
-        product.images = images.map((img) => img._id);
+        product.images = [...product.images, ...images.map((img) => img._id)];
+      } else {
+        product.images = product.images;
       }
 
       await product.save();
@@ -222,6 +252,7 @@ app.delete("/api/products/:id", async (req, res) => {
     await Image.deleteMany({ product: product._id });
 
     await product.deleteOne();
+
     res.status(200).json({ message: "Product delete" });
   } catch (error) {
     console.log(error);
@@ -232,9 +263,7 @@ app.delete("/api/products/:id", async (req, res) => {
 // delete Image
 app.delete("/api/images/:id", async (req, res) => {
   try {
-
-    const image = await Image.findById(req.params.id); 
-    console.log(req.params.id);
+    const image = await Image.findById(req.params.id);
 
     if (!image) {
       return res.status(404).json({ message: "Image not found" });
@@ -243,12 +272,29 @@ app.delete("/api/images/:id", async (req, res) => {
     // Optionally, delete the image file from the server
     await deleteFile(image.url);
 
+    // update product images
+    const pid = image.product.toString();
+
+    const product = await Product.findById(pid);
+    // filtered product images
+    product.images = product.images.filter(
+      (img) => img._id.toString() !== image._id.toString()
+    );
+    product.save();
+
     // Delete the image from the database
     await image.deleteOne();
     return res.status(200).json("Image delete sucessfull");
   } catch (error) {
     console.log(error.message);
   }
+});
+
+app.use(multerErrorHandler);
+
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: "Internal server error" });
 });
 
 const PORT = 5000;

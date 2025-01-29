@@ -3,8 +3,7 @@ const fs = require("fs");
 
 const deleteFile = async (filePath) => {
   try {
-   const uploadDir = path.join(process.cwd(), filePath);
-   console.log("uploadDir",uploadDir)
+    const uploadDir = path.join(process.cwd(), filePath);
 
     await fs.promises.access(uploadDir);
 
@@ -28,4 +27,4 @@ const deleteFile = async (filePath) => {
   }
 };
 
-module.exports={deleteFile};
+module.exports = { deleteFile };
