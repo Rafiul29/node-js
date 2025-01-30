@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 
+// Images Model
 const imageSchema = new mongoose.Schema(
   {
     url: {
@@ -16,6 +17,7 @@ const imageSchema = new mongoose.Schema(
 
 const Image = mongoose.model("Image", imageSchema);
 
+// Product Model
 const productSchema = new mongoose.Schema(
   {
     name: {
@@ -41,4 +43,43 @@ const productSchema = new mongoose.Schema(
 
 const Product = mongoose.model("Product", productSchema);
 
-module.exports = { Product, Image };
+// User Model
+const useSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+  },
+  email: {
+    type: String,
+    required: true,
+  },
+  password: {
+    type: String,
+    required: true,
+  },
+  isVerify: {
+    type: Boolean,
+    default: false,
+  }
+},{timestamps:true});
+const User = mongoose.model("User", useSchema);
+
+// verifyCode Model
+const verifyCodeSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+  code: {
+    type: Number,
+    required: true,
+  },
+  expiresAt: {
+    type: Date,
+    required: true,
+  },
+},{timestamps:true});
+const VerifyCode = mongoose.model("VerifyCode", verifyCodeSchema);
+
+module.exports = { Product, Image, User, VerifyCode };

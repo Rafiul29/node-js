@@ -7,7 +7,8 @@ const mongoose = require("mongoose");
 const { uploadFile } = require("./utils/uploadFile");
 const { deleteFile } = require("./utils/deleteFile");
 
-const { Image, Product } = require("./models");
+const { Image, Product, User, VerifyCode } = require("./models");
+const { sendVerificationEmail } = require("./utils/emailService");
 
 const app = express();
 
@@ -73,6 +74,7 @@ app.get("/", (req, res) => {
 //     }
 //   }
 // };
+
 const multerErrorHandler = (err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     switch (err.code) {
@@ -287,6 +289,142 @@ app.delete("/api/images/:id", async (req, res) => {
     return res.status(200).json("Image delete sucessfull");
   } catch (error) {
     console.log(error.message);
+  }
+});
+
+// user registration
+app.post("/api/auth/register", async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+
+    const code = Math.floor(10000 + Math.random() * 900000);
+
+    const expiresAt = new Date(Date.now() + 2 * 60 * 1000);
+
+    const existingUser = await User.findOne({ email });
+
+    // user exist account verify
+    if (existingUser && existingUser.isVerify) {
+      res.status(400).json({ message: "email already exists" });
+      return;
+    }
+
+    let userId = null;
+
+    // user exist but account not verify
+    if (existingUser && !existingUser.isVerify) {
+      const verifyCode = await VerifyCode.findOne({ userId: existingUser._id });
+      // set verify and expiare
+      verifyCode.code = code;
+      verifyCode.expiresAt = expiresAt;
+      await verifyCode.save();
+      userId = existingUser._id;
+    } else {
+      // create a new user
+      const user = new User({
+        name,
+        email,
+        password,
+      });
+
+      // save to db user data
+      await user.save();
+
+      await VerifyCode.create({
+        userId: user._id,
+        code: code,
+        expiresAt: expiresAt,
+      });
+
+      userId = user._id;
+    }
+
+    await sendVerificationEmail(name, email, code);
+    res.status(201).json({
+      message: "User registration successfully",
+      userId,
+    });
+  } catch (error) {
+    res.status(404).json({ message: error.message });
+  }
+});
+
+app.post("/verify-code", async (req, res) => {
+  try {
+    const { userId, code } = req.body;
+    const user = await User.findById(userId);
+
+    const verifyCodeData = await VerifyCode.findOne({ userId: user._id });
+
+    if (!user) {
+      res.status(400).json({ message: "User not found" });
+      return;
+    }
+
+    if (!verifyCodeData) {
+      res.status(400).json({ message: "Verification data not found" });
+      return;
+    }
+
+    if (verifyCodeData.code !== code) {
+      res.status(400).json({ message: "Incorrect Email verification code" });
+      return;
+    }
+
+    if (verifyCodeData.expiresAt < new Date()) {
+      res.status(400).json({ message: "Verification code has expired." });
+      return;
+    }
+
+    user.isVerify = true;
+    await user.save();
+
+    await verifyCodeData.deleteOne();
+
+    res
+      .status(200)
+      .json({ message: "Email verified successfully. Please Login ......." });
+  } catch (error) {
+    res.status(404).json({ message: error.message });
+  }
+});
+
+app.patch("/resent-code/:uid", async (req, res) => {
+  try {
+    // find user
+    const user = await User.findById(req.params.uid);
+
+    // find verify code data
+    const verifyCodeData = await VerifyCode.findOne({ userId: req.params.uid });
+
+    if (!verifyCodeData) {
+      res.status(400).json({ message: "Verification data not found" });
+      return;
+    }
+
+    if (!user) {
+      res.status(400).json({ message: "User not found" });
+      return;
+    }
+
+    // generate code and expaired date
+    const code = Math.floor(10000 + Math.random() * 900000);
+    const expiresAt = new Date(Date.now() + 2 * 60 * 1000);
+
+    await sendVerificationEmail(user.name, user.email, code);
+
+    //update Verify Code  data
+    verifyCodeData.code = code;
+    verifyCodeData.expiresAt = expiresAt;
+
+    await verifyCodeData.save();
+
+    res.status(201).json({
+      message: "resent email verification code",
+      userId: user._id,
+    });
+  } catch (error) {
+    res.status(404).json({ message: error.message });
   }
 });
 
